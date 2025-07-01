@@ -169,3 +169,4 @@ jobs:
           file: ./db/Dockerfile
           push: true
           tags: ${{ env.IMAGE_TAG }}
+
