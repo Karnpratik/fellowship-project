@@ -1,0 +1,101 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  set-vars:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.setvars.outputs.short_sha }}
+    steps:
+      - name: Set short SHA
+        id: setvars
+        run: echo "short_sha=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+
+  frontend:
+    needs: set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/blogapp-frontend:dev-${{ needs.set-vars.outputs.short_sha }}
+
+  backend1:
+    needs: set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push backend1 image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend1/
+          file: ./backend1/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/blogapp-backend1:dev-${{ needs.set-vars.outputs.short_sha }}
+
+  backend2:
+    needs: set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push backend2 image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend2/
+          file: ./backend2/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}
+
+  database:
+    needs: set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push database image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./database/
+          file: ./database/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}
