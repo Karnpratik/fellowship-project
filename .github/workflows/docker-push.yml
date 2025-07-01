@@ -37,6 +37,11 @@ jobs:
       - name: Run React tests
         run: echo "test pass for now .... "
 
+      - name: Conventional Commit checks
+        uses: webiny/action-conventional-commits@v1.3.0
+        with:
+          allowed-commit-types: "feat,fix,docs,style,refactor,test,chore,ci,perf,revert"
+
   frontend:
     if: github.event_name == 'push'
     needs:
@@ -101,3 +106,66 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_TAG }}
 
+  backend2:
+    if: github.event_name == 'push'
+    needs:
+      - testing
+      - set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set backend2 image tag for prod
+        if: github.ref_name == 'main'
+        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+
+      - name: Set backend2 image tag for dev
+        if: github.ref_name == 'dev'
+        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+
+      - name: Build and push backend2 image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend2/
+          file: ./backend2/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_TAG }}
+
+  database:
+    if: github.event_name == 'push'
+    needs:
+      - testing
+      - set-vars
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set database image tag for prod
+        if: github.ref_name == 'main'
+        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+
+      - name: Set database image tag for dev
+        if: github.ref_name == 'dev'
+        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+
+      - name: Build and push database image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./db/
+          file: ./db/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_TAG }}
