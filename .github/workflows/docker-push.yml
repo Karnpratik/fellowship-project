@@ -95,7 +95,7 @@ jobs:
       - name: Build and push database image
         uses: docker/build-push-action@v5
         with:
-          context: ./database/
+          context: ./db/
           file: ./db/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}
