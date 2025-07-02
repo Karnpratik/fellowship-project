@@ -47,7 +47,7 @@ jobs:
     needs:
       - testing
       - set-vars
-    runs-on: ubuntu-latest
+    runs-on: [v1]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
     needs:
       - testing
       - set-vars
-    runs-on: ubuntu-latest
+    runs-on: [v2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
