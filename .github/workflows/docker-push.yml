@@ -154,8 +154,8 @@ jobs:
           cache-from: type=local,src=/tmp/.cachebuild
           cache-to: type=local,dest=/tmp/.cachebuild-new
 
-       - name: move updated docker cache
-         run: |
+      - name: move updated docker cache
+        run: |
           rm -rf /tmp/.cachebuild
           mv /tmp/.cachebuild-new /tmp/.cachebuild   
 
