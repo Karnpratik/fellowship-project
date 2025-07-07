@@ -105,7 +105,7 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push frontend image
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v5
         with:
           context: ./frontend/
           file: ./frontend/Dockerfile
@@ -145,7 +145,7 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push backend1 image
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v5
         with:
           context: ./backend1/
           file: ./backend1/Dockerfile
@@ -185,7 +185,7 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push backend2 image
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v5
         with:
           context: ./backend2/
           file: ./backend2/Dockerfile
@@ -225,7 +225,7 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push database image
-        uses: docker/setup-buildx-action-action@v3
+        uses: docker/setup-buildx-action-action@v5
         with:
           context: ./db/
           file: ./db/Dockerfile
