@@ -32,10 +32,10 @@ jobs:
       db: ${{ steps.filter.outputs.db }}
     steps:
       - name: checkout code
-      - uses: action/checkout@v4
+        uses: action/checkout@v4
 
       - name: path changes filter
-      - uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v3
         id: filter
         with: 
           filters: |
