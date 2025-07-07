@@ -5,12 +5,49 @@ on:
     branches:
       - main
       - dev
+    paths:
+      - 'frontend/**'
+      - 'backend1/**'
+      - 'backend2/**'
+      - 'db/**'
+      - '.github/workflows/**'  
   pull_request:
     branches:
       - dev
+    paths:
+      - 'frontend/**'
+      - 'backend1/**'
+      - 'backend2/**'
+      - 'db/**'
+      - '.github/workflows/**'  
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend1: ${{ steps.filter.outputs.backend1 }}
+      backend2: ${{ steps.filter.outputs.backend2 }}
+      db: ${{ steps.filter.outputs.db }}
+    steps:
+      - name: checkout code
+      - uses: action/checkout@v4
+
+      - name: path changes filter
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with: 
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend1:
+              - 'backend1/**'
+            backend2:
+              - 'backend2/**'
+            db:
+              - 'db/**'  
+
   set-vars:
     runs-on: ubuntu-latest
     outputs:
@@ -42,11 +79,12 @@ jobs:
         with:
           allowed-commit-types: "feat,fix,docs,style,refactor,test,chore,ci,perf,revert"
 
-  frontend:
-    if: github.event_name == 'push'
+  frontend: 
     needs:
+      - changes 
       - testing
       - set-vars
+    if: needs.changes.outputs.frontend == 'true'  
     runs-on: [v1]
     steps:
       - name: Checkout code
@@ -67,18 +105,26 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push frontend image
-        uses: docker/build-push-action@v5
+        uses: docker/setup-buildx-action@v3
         with:
           context: ./frontend/
           file: ./frontend/Dockerfile
           push: true
           tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=local,src=/tmp/.cachebuild
+          cache-to: type=local,dest=/tmp/.cachebuild-new
+
+      - name: move updated docker cache
+        run: |
+          rm -rf /tmp/.cachebuild
+          mv /tmp/.cachebuild-new /tmp/.cachebuild   
 
   backend1:
-    if: github.event_name == 'push'
     needs:
+      - changes
       - testing
       - set-vars
+    if: needs.changes.outputs.backend1 == 'true'  
     runs-on: [v2]
     steps:
       - name: Checkout code
@@ -99,18 +145,26 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push backend1 image
-        uses: docker/build-push-action@v5
+        uses: docker/setup-buildx-action@v3
         with:
           context: ./backend1/
           file: ./backend1/Dockerfile
           push: true
           tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=local,src=/tmp/.cachebuild
+          cache-to: type=local,dest=/tmp/.cachebuild-new
+
+       - name: move updated docker cache
+        run: |
+          rm -rf /tmp/.cachebuild
+          mv /tmp/.cachebuild-new /tmp/.cachebuild   
 
   backend2:
-    if: github.event_name == 'push'
     needs:
+      - changes
       - testing
       - set-vars
+    if: needs.changes.outputs.backend2 == 'true'  
     runs-on: [v2]
     steps:
       - name: Checkout code
@@ -131,18 +185,26 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push backend2 image
-        uses: docker/build-push-action@v5
+        uses: docker/setup-buildx-action@v3
         with:
           context: ./backend2/
           file: ./backend2/Dockerfile
           push: true
           tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=local,src=/tmp/.cachebuild
+          cache-to: type=local,dest=/tmp/.cachebuild-new
+
+      - name: move updated docker cache
+        run: |
+          rm -rf /tmp/.cachebuild
+          mv /tmp/.cachebuild-new /tmp/.cachebuild    
 
   database:
-    if: github.event_name == 'push'
     needs:
+      - changes
       - testing
       - set-vars
+    if: needs.changes.outputs.db == 'true'  
     runs-on: [v1]
     steps:
       - name: Checkout code
@@ -163,10 +225,17 @@ jobs:
         run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
       - name: Build and push database image
-        uses: docker/build-push-action@v5
+        uses: docker/setup-buildx-action-action@v3
         with:
           context: ./db/
           file: ./db/Dockerfile
           push: true
           tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=local,src=/tmp/.cachebuild
+          cache-to: type=local,dest=/tmp/.cachebuild-new
+
+      - name: move updated docker cache
+        run: |
+          rm -rf /tmp/.cachebuild
+          mv /tmp/.cachebuild-new /tmp/.cachebuild    
 
