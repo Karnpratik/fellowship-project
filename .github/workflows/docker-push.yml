@@ -133,7 +133,7 @@ jobs:
 
   deploy-frontend-pages:
     if: github.ref_name == 'main'
-    needs: frontend
+    needs: [frontend, set-vars]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -152,7 +152,7 @@ jobs:
 
   trivy-scan:
     if: github.ref_name == 'main'
-    needs: [frontend]
+    needs: [frontend, set-vars]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
