@@ -5,24 +5,21 @@ permissions:
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
     paths:
       - 'frontend/**'
       - 'backend1/**'
       - 'backend2/**'
       - 'db/**'
-      - '.github/workflows/**'  
+      - '.github/workflows/**'
   pull_request:
-    branches:
-      - dev
+    branches: [dev]
     paths:
       - 'frontend/**'
       - 'backend1/**'
       - 'backend2/**'
       - 'db/**'
-      - '.github/workflows/**'  
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
@@ -34,13 +31,13 @@ jobs:
       backend2: ${{ steps.filter.outputs.backend2 }}
       db: ${{ steps.filter.outputs.db }}
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: path changes filter
+      - name: Path changes filter
         uses: dorny/paths-filter@v3
         id: filter
-        with: 
+        with:
           filters: |
             frontend:
               - 'frontend/**'
@@ -49,7 +46,7 @@ jobs:
             backend2:
               - 'backend2/**'
             db:
-              - 'db/**'  
+              - 'db/**'
 
   set-vars:
     runs-on: ubuntu-latest
@@ -82,22 +79,19 @@ jobs:
         with:
           allowed-commit-types: "feat,fix,docs,style,refactor,test,chore,ci,perf,revert"
 
-  frontend: 
-    needs:
-      - changes 
-      - testing
-      - set-vars
-    if: needs.changes.outputs.frontend == 'true'  
-    runs-on: [v1]
+  frontend:
+    needs: [changes, testing, set-vars]
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: build frontend 
+      - name: Build frontend
         run: |
           cd frontend
           yarn install
-          yarn build 
+          yarn build
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -105,16 +99,16 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: setup docker buildx
+      - name: Setup docker buildx
         uses: docker/setup-buildx-action@v3
-    
-      - name: Set frontend image tag for prod
-        if: github.ref_name == 'main'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
 
-      - name: Set frontend image tag for dev
-        if: github.ref_name == 'dev'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+      - name: Set frontend image tag
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          fi
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -126,14 +120,13 @@ jobs:
           cache-from: type=local,src=/tmp/.cachebuild
           cache-to: type=local,dest=/tmp/.cachebuild-new
 
-      - name: artifact upload
+      - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
-          with:
-            name: frontend-build-${{ env.IMAGE_TAG }}
-            path: frontend/dist/
-    
+        with:
+          name: frontend-build-${{ env.IMAGE_TAG }}
+          path: frontend/dist/
 
-      - name: move updated docker cache
+      - name: Move updated docker cache
         run: |
           rm -rf /tmp/.cachebuild
           mv /tmp/.cachebuild-new /tmp/.cachebuild
@@ -159,21 +152,17 @@ jobs:
 
   trivy-scan:
     if: github.ref_name == 'main'
-    needs: 
-      - frontend
-      - backend1
-      - backend2
-      - set-vars
+    needs: [frontend, backend1, backend2, set-vars]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Trivy HTML template download
+      - name: Download Trivy HTML template
         run: |
           mkdir -p trivytemp
           wget -O trivytemp/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
 
-      - name: Run Trivy vulnerability scanner on Frontend image
+      - name: Scan frontend image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:prod-${{ needs.set-vars.outputs.short_sha }}'
@@ -181,7 +170,7 @@ jobs:
           template: '@trivytemp/html.tpl'
           output: 'scanfrontend.html'
 
-      - name: Run Trivy vulnerability scanner on Backend1 image
+      - name: Scan backend1 image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:prod-${{ needs.set-vars.outputs.short_sha }}'
@@ -189,7 +178,7 @@ jobs:
           template: '@trivytemp/html.tpl'
           output: 'scanbackend1.html'
 
-      - name: Run Trivy vulnerability scanner on Backend2 image
+      - name: Scan backend2 image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:prod-${{ needs.set-vars.outputs.short_sha }}'
@@ -199,32 +188,29 @@ jobs:
 
       - name: Move scan reports to directory
         run: |
-          mkdir -p scan-reports
+          mkdir -p reports
           mv scanfrontend.html reports/
           mv scanbackend1.html reports/
           mv scanbackend2.html reports/
 
-      - name: Upload scan reports artifact
+      - name: Upload scan reports
         uses: actions/upload-artifact@v4
         with:
-          name: security-scan-reports-${{ needs.build-frontend.outputs.new_version }}
+          name: security-scan-reports-${{ needs.set-vars.outputs.short_sha }}
           path: reports/
-      
+
       - name: Deploy scan reports to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: reports
           destination_dir: scan
-          keep_files: true        
+          keep_files: true
 
   backend1:
-    needs:
-      - changes
-      - testing
-      - set-vars
-    if: needs.changes.outputs.backend1 == 'true'  
-    runs-on: [v2]
+    needs: [changes, testing, set-vars]
+    if: needs.changes.outputs.backend1 == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -235,17 +221,16 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: setup docker buildx
+      - name: Setup docker buildx
         uses: docker/setup-buildx-action@v3
 
-
-      - name: Set backend1 image tag for prod
-        if: github.ref_name == 'main'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
-
-      - name: Set backend1 image tag for dev
-        if: github.ref_name == 'dev'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+      - name: Set backend1 image tag
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend1:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          fi
 
       - name: Build and push backend1 image
         uses: docker/build-push-action@v5
@@ -257,18 +242,15 @@ jobs:
           cache-from: type=local,src=/tmp/.cachebuild
           cache-to: type=local,dest=/tmp/.cachebuild-new
 
-      - name: move updated docker cache
+      - name: Move updated docker cache
         run: |
           rm -rf /tmp/.cachebuild
-          mv /tmp/.cachebuild-new /tmp/.cachebuild   
+          mv /tmp/.cachebuild-new /tmp/.cachebuild
 
   backend2:
-    needs:
-      - changes
-      - testing
-      - set-vars
-    if: needs.changes.outputs.backend2 == 'true'  
-    runs-on: [v2]
+    needs: [changes, testing, set-vars]
+    if: needs.changes.outputs.backend2 == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -279,16 +261,16 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: setup docker buildx
-        uses: docker/setup-buildx-action@v3    
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Set backend2 image tag for prod
-        if: github.ref_name == 'main'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
-
-      - name: Set backend2 image tag for dev
-        if: github.ref_name == 'dev'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+      - name: Set backend2 image tag
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-backend2:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          fi
 
       - name: Build and push backend2 image
         uses: docker/build-push-action@v5
@@ -300,18 +282,15 @@ jobs:
           cache-from: type=local,src=/tmp/.cachebuild
           cache-to: type=local,dest=/tmp/.cachebuild-new
 
-      - name: move updated docker cache
+      - name: Move updated docker cache
         run: |
           rm -rf /tmp/.cachebuild
-          mv /tmp/.cachebuild-new /tmp/.cachebuild    
+          mv /tmp/.cachebuild-new /tmp/.cachebuild
 
   database:
-    needs:
-      - changes
-      - testing
-      - set-vars
-    if: needs.changes.outputs.db == 'true'  
-    runs-on: [v1]
+    needs: [changes, testing, set-vars]
+    if: needs.changes.outputs.db == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -322,16 +301,16 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: setup docker buildx
-        uses: docker/setup-buildx-action@v3    
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Set database image tag for prod
-        if: github.ref_name == 'main'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
-
-      - name: Set database image tag for dev
-        if: github.ref_name == 'dev'
-        run: echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+      - name: Set database image tag
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:prod-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-database:dev-${{ needs.set-vars.outputs.short_sha }}" >> $GITHUB_ENV
+          fi
 
       - name: Build and push database image
         uses: docker/build-push-action@v5
@@ -343,8 +322,8 @@ jobs:
           cache-from: type=local,src=/tmp/.cachebuild
           cache-to: type=local,dest=/tmp/.cachebuild-new
 
-      - name: move updated docker cache
+      - name: Move updated docker cache
         run: |
           rm -rf /tmp/.cachebuild
-          mv /tmp/.cachebuild-new /tmp/.cachebuild    
+          mv /tmp/.cachebuild-new /tmp/.cachebuild
 
