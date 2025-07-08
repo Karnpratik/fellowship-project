@@ -141,7 +141,7 @@ jobs:
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build-${{ env.IMAGE_TAG }}
+          name: frontend-build-${{ github.ref_name }}-${{ needs.set-vars.outputs.short_sha }}
           path: dist
 
       - name: Deploy to GitHub Pages
