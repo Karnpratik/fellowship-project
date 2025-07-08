@@ -248,19 +248,23 @@ jobs:
         with:
           path: artifacts
 
-      - run: mkdir -p gh-pages/trivy-report
+      - name: prepare report directory
+        run: mkdir -p gh-pages/trivy-report
 
-      - if: needs.changes.outputs.backend1 == 'true'
+      - name: copy backend1 report  
+        if: needs.changes.outputs.backend1 == 'true'
         run: |
           mkdir -p gh-pages/trivy-report/backend1
           cp artifacts/trivy-report-backend1/backend1-trivy-report.html gh-pages/trivy-report/backend1/index.html
 
-      - if: needs.changes.outputs.backend2 == 'true'
+      - name: copy backend2 report    
+        if: needs.changes.outputs.backend2 == 'true'
         run: |
           mkdir -p gh-pages/trivy-report/backend2
           cp artifacts/trivy-report-backend2/backend2-trivy-report.html gh-pages/trivy-report/backend2/index.html
 
-      - if: needs.changes.outputs.frontend == 'true'
+      - name: copy frontend report    
+        if: needs.changes.outputs.frontend == 'true'
         run: |
           mkdir -p gh-pages/trivy-report/frontend
           cp artifacts/trivy-report-frontend/frontend-trivy-report.html gh-pages/trivy-report/frontend/index.html
@@ -274,8 +278,7 @@ jobs:
           cp -r gh-pages/* .
           git add trivy-report
           git commit -m "chore(report): update trivy reports" || echo "No changes"
-          git push origin gh-pages        
-
+          git push origin gh-pages
 
   backend1:
     needs: [changes, testing, set-vars]
