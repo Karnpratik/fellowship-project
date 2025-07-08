@@ -152,7 +152,7 @@ jobs:
 
   trivy-scan:
     if: github.ref_name == 'main'
-    needs: [frontend, backend1, backend2, set-vars]
+    needs: [frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
