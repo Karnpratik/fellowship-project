@@ -88,6 +88,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build frontend
+        env:
+          VITE_BASE_PATH: /fellowship-project/
         run: |
           cd frontend
           yarn install
