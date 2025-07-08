@@ -123,7 +123,7 @@ jobs:
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-${{ env.IMAGE_TAG }}
+          name: frontend-build-${{ github.ref_name }}-${{ needs.set-vars.outputs.short_sha }}
           path: frontend/dist/
 
       - name: Move updated docker cache
