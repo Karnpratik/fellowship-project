@@ -405,7 +405,7 @@ jobs:
       - frontend
       - changes
       - trivy-scan-frontend
-    runs-on: [v1]
+    runs-on: self-hosted
     if: needs.changes.outputs.frontend == 'true'
 
     steps:
