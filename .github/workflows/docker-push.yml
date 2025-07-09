@@ -400,3 +400,19 @@ jobs:
           rm -rf /tmp/.cachebuild
           mv /tmp/.cachebuild-new /tmp/.cachebuild
 
+  deploy-frontend:
+    needs:
+      - frontend
+      - changes
+      - trivy-scan-frontend
+    runs-on: [v1]
+    if: needs.changes.outputs.frontend == 'true'
+
+    steps:
+      - name: ssh and deploy
+        run: |
+          echo "{{ secrets.SSH_KEY }}" > 1sshkey
+          chmod 600 1sshkey
+          ssh -i './1sshkey' ${{ screts.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          echo "hello world" >> hello.txt
+          EOF
