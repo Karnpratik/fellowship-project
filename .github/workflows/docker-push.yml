@@ -197,7 +197,7 @@ jobs:
       - name: Run Trivy HTML Scan
         run: |
           trivy image --format template --template @html.tpl \
-            -o frontend-trivy-report.html \
+            -o backend1-trivy-report.html \
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:prod-${{ needs.set-vars.outputs.short_sha }}
 
       - name: Upload Trivy HTML report
@@ -224,7 +224,7 @@ jobs:
       - name: Run Trivy HTML Scan
         run: |
           trivy image --format template --template @html.tpl \
-            -o frontend-trivy-report.html \
+            -o backend2-trivy-report.html \
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/blogapp-frontend:prod-${{ needs.set-vars.outputs.short_sha }}
 
       - name: Upload Trivy HTML report
@@ -400,9 +400,12 @@ jobs:
           rm -rf /tmp/.cachebuild
           mv /tmp/.cachebuild-new /tmp/.cachebuild
 
-  deploy-frontend:
+  deployment:
     needs:
+      - set-vars
       - frontend
+      - backend1
+      - backend2
       - changes
       - trivy-scan-frontend
     runs-on: [v3]
@@ -415,4 +418,27 @@ jobs:
           chmod 600 1sshkey
           ssh -i './1sshkey' ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           echo "hello world" >> hello.txt
+          export TAG=${{ needs.set-vars.outputs.short_sha }}
+          docker pull pratik12321/blogapp-backend2:$TAG
+          docker pull pratik12321/blogapp-backend1:$TAG
+          docker pull pratik12321/blogapp-frontend:$TAG
+          
+          docker rm -f backend1 backend2 frontend || true
+          
+          docker network create backend-network || true
+          
+          docker run -d --name backend1 \
+          --network backend-network \
+          -p 3000:3000 \
+          pratik12321/blogapp-backend1:$TAG
+
+          docker run -d --name backend2 \
+          --network backend-network \
+          -p 3001:3001 \
+          pratik12321/blogapp-backend2:$TAG
+
+          docker run -d --name frontend \
+          --network backend-network \
+          -p 5173:5173 \
+          pratik12321/blogapp-frontend:$TAG
           EOF
