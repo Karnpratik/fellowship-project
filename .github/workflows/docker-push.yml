@@ -411,7 +411,7 @@ jobs:
     steps:
       - name: ssh and deploy
         run: |
-          echo "{{ secrets.SSH_KEY }}" > 1sshkey
+          echo "${{ secrets.SSH_KEY }}" > 1sshkey
           chmod 600 1sshkey
           ssh -i './1sshkey' ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           echo "hello world" >> hello.txt
