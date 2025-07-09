@@ -419,9 +419,9 @@ jobs:
           ssh -i './1sshkey' ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           echo "hello world" >> hello.txt
           export TAG=${{ needs.set-vars.outputs.short_sha }}
-          docker pull pratik12321/blogapp-backend2:$TAG
-          docker pull pratik12321/blogapp-backend1:$TAG
-          docker pull pratik12321/blogapp-frontend:$TAG
+          docker pull pratik12321/blogapp-backend2:prod-$TAG
+          docker pull pratik12321/blogapp-backend1:prod-$TAG
+          docker pull pratik12321/blogapp-frontend:prod-$TAG
           
           docker rm -f backend1 backend2 frontend || true
           
@@ -430,15 +430,15 @@ jobs:
           docker run -d --name backend1 \
           --network backend-network \
           -p 3000:3000 \
-          pratik12321/blogapp-backend1:$TAG
+          pratik12321/blogapp-backend1:prod-$TAG
 
           docker run -d --name backend2 \
           --network backend-network \
           -p 3001:3001 \
-          pratik12321/blogapp-backend2:$TAG
+          pratik12321/blogapp-backend2:prod-$TAG
 
           docker run -d --name frontend \
           --network backend-network \
           -p 5173:5173 \
-          pratik12321/blogapp-frontend:$TAG
+          pratik12321/blogapp-frontend:prod-$TAG
           EOF
