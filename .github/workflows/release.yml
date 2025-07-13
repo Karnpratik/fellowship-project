@@ -1,4 +1,4 @@
-name: Semantic Release
+name: Semantic Release via SSH
 
 on:
   push:
@@ -10,15 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Setup SSH key and start ssh-agent
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.ACTIONS_SSH_KEY }}
+
+      - name: Checkout Repository (SSH)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
+          ssh-strict: true
+          fetch-depth: 0
 
-      - name: Set Git remote to HTTPS with token
-        run: git remote set-url origin https://x-access-token:${{ secrets.GIT_PAT_TOKEN }}@github.com/Karnpratik/fellowship-project.git  
-
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -26,7 +29,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Semantic Release
+      - name: Run semantic-release
         env:
           GH_TOKEN: ${{ secrets.GIT_PAT_TOKEN }}
         run: npx semantic-release
