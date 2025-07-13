@@ -4,6 +4,10 @@ permissions:
   contents: write
 
 on:
+  workflow_run:
+    workflows: ["Semantic Release via SSH"]
+    types:
+      - completed
   push:
     branches: [main, dev]
     paths:
