@@ -12,6 +12,11 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+
+      - name: Set Git remote to HTTPS with token
+        run: git remote set-url origin https://x-access-token:${{ secrets.GIT_PAT_TOKEN }}@github.com/Karnpratik/fellowship-project.git  
 
       - name: Setup Node
         uses: actions/setup-node@v4
