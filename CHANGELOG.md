@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Karnpratik/fellowship-project/compare/v1.1.0...v1.2.0) (2025-07-13)
+
+
+### Features
+
+* feature added ([6f3ed14](https://github.com/Karnpratik/fellowship-project/commit/6f3ed1406ddf6fcb56f364a5db204c2d368ffb37))
+
 # [1.1.0](https://github.com/Karnpratik/fellowship-project/compare/v1.0.0...v1.1.0) (2025-07-13)
 
 
