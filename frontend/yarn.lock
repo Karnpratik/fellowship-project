@@ -2154,10 +2154,10 @@ react-is@^19.1.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-19.1.0.tgz#805bce321546b7e14c084989c77022351bbdd11b"
   integrity sha512-Oe56aUPnkHyyDxxkvqtd7KkdQP5uIUfHxd5XTb3wE9d/kRnZLmKbDB0GWk919tdQ+mxxPtG6EAs6RMT6i1qtHg==
 
-react-quill-new@^3.4.6:
-  version "3.4.6"
-  resolved "https://registry.yarnpkg.com/react-quill-new/-/react-quill-new-3.4.6.tgz#37db9df85865b262de077e5f71cfc000589da4fb"
-  integrity sha512-S2kEAwoKRo+xUIAEpb94fwiPe2QU3FmwIfQ+7Lkchf+izPa2nRu1mr4i4QxyVYg8TjHDryDUiOEYZuFEV45QFA==
+react-quill-new@^3.5.0:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/react-quill-new/-/react-quill-new-3.5.0.tgz#17810d28406b739756c75a822d775aea59778c08"
+  integrity sha512-oKtv/3vmlTVpFMMyGMe4xfm8cHV/f3HemfFs9VF1WKR/D/FeQT8WxG8Ec1b93Pk2hA6z+8c0gk1iBKjtdbESIA==
   dependencies:
     lodash-es "^4.17.21"
     quill "~2.0.2"
